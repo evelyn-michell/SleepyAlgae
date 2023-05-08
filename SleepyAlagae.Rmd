@@ -1,0 +1,349 @@
+---
+title: "SleepyAlgae"
+author: "Evelyn Diaz - PID:A15576617"
+date: "12/22/2022"
+output: html_document
+---
+
+Loading packages:
+```{r}
+library(ggplot2)
+library(tidyr)
+library(doBy)
+```
+
+
+Read Data:
+
+```{r}
+rm(list=ls())
+a<-read.csv("Evelyn data.csv")
+summary(a)
+str(a)
+```
+
+Start Plotting:
+
+OD by strain:
+
+```{r}
+b<-summaryBy(CorrectedOD ~ Sample + DayTemp + NightTemp + Day + Time,
+                  data = a, FUN = c(mean, sd))
+
+b<-subset(b, Time=="D")
+
+b$Treatment<-paste(b$DayTemp, b$NightTemp, sep="_")
+
+
+p1<-ggplot(b,aes(y=CorrectedOD.mean, x=Day, group=Treatment, color=Treatment)) +
+  geom_point(stat="identity")+
+  geom_line()+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Day", y="Optical Density", color= "Temperature 
+Treatment (°C)
+Day_Night")+
+  geom_errorbar(aes(ymin=CorrectedOD.mean-CorrectedOD.sd, 
+                ymax=CorrectedOD.mean+CorrectedOD.sd), 
+                width=.2,position=position_dodge(0.05)) + theme_bw()
+#  scale_x_discrete(limits = c("Date", "Basin","Species", "Date*Basin","Date*Species","Basin*Species","Date*Basin*Species","Residual"))+
+
+p1
+
+mOD<- aov((CorrectedOD ~ Sample + DayTemp + NightTemp + Day + Time), data = a)
+summary(mOD)
+
+mOD<- aov((CorrectedOD ~ Sample * DayTemp * NightTemp * Day * Time), data = a)
+summary(mOD)
+
+#ugbad 
+#mgc33<-lm(gr~(Nutrients + CO2 + Light + Temperature)^2, 
+        #data=subset(d2.test, Growth_Cycle=="32"))
+```
+
+```{r}
+#lm(CorrectedOD~)
+```
+
+
+
+
+Day 1 OD
+```{r}
+
+day1<-subset(a, Day==1)
+day1$Treatment<-paste(day1$DayTemp, day1$NightTemp, sep="_")
+day1<-day1[,c(3:7,9,13,18)]
+day1<-pivot_wider(day1, names_from ="Time", 
+                     values_from = "CorrectedOD")
+day1$growth<-day1$N-day1$D
+
+p2<-ggplot(day1,aes(y=growth, x=as.factor(DayTemp),
+  color=as.factor(NightTemp))) +
+  geom_boxplot()+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Treatment", y="growth") 
+
+p2#This is for growth day 1m to 1 n
+m1n<-aov(growth~as.factor(DayTemp)*as.factor(NightTemp)* Sample, data=day1)
+anova(m1n)
+
+day1a<-subset(a, Day==1|Day==2)  #night time data, day 1 to day 2
+day1a<-subset(day1a, Time!="D"|Day!=1)
+day1a<-day1a[,c(3:6,9,13)]  #have to leave Day out because there are 2 values
+day1a<-pivot_wider(day1a, names_from ="Time", 
+                  values_from = "CorrectedOD")
+day1a$growth<-day1a$D-day1a$N
+#growth for overnight
+
+
+m2<-aov(growth~as.factor(NightTemp)*as.factor(DayTemp)* Sample, data=day1a)
+anova(m2)
+
+p3<-ggplot(day1a,aes(y=growth, x=as.factor(DayTemp),
+    color=as.factor(NightTemp))) +
+  geom_boxplot(width=0.75)+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Treatment", y="growth")
+p3
+
+### Combining night and day
+day1<-day1[,-c(5:6)]
+day1$Time<-"Day"
+day1a$Time<-"Night"
+
+day1b<-rbind(day1, day1a)
+
+#Plot with night and day changes in OD
+
+p4<-ggplot(day1b,aes(y=growth, x=as.factor(DayTemp),
+                     color=as.factor(NightTemp))) +
+  geom_boxplot(width=0.75)+
+  facet_grid(cols=vars(Sample), rows=vars(Time), scales = "free") +
+  labs(x = "Day temperature", y="Change in OD", col="Night temp") + theme_bw()
+  
+p4
+```
+
+
+Fluorescence
+
+```{r}
+c<-summaryBy(CorrectedFluor ~ Sample + DayTemp + NightTemp + Day + Time,
+                  data = a, FUN = c(mean, sd))
+lmFL<- lm(CorrectedFluor ~ Sample + DayTemp + NightTemp + Day + Time,
+                  data = a)
+summary(lmFL)
+c<-subset(c, Time=="D")
+
+c$Treatment<-paste(c$DayTemp, c$NightTemp, sep="_")
+
+
+p5<-ggplot(c,aes(y=CorrectedFluor.mean, x=Day, group=Treatment, color=Treatment)) +
+  geom_point(stat="identity")+
+  geom_line()+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Day", y="Fluorescence", col="Temperature 
+Treatment (°C)
+Day_Night")+
+  geom_errorbar(aes(ymin=CorrectedFluor.mean-CorrectedFluor.sd, 
+                ymax=CorrectedFluor.mean+CorrectedFluor.sd), 
+                width=.2,position=position_dodge(0.05)) +
+ theme_bw()
+p5
+```
+
+
+
+
+Day 1 Fluorescence
+
+
+```{r}
+
+day1F<-subset(a, Day==1)
+day1F$Treatment<-paste(day1$DayTemp, day1$NightTemp, sep="_")
+day1F<-day1F[,c(3:7,9,17,18)]
+day1F<-pivot_wider(day1F, names_from ="Time", 
+                     values_from = "CorrectedFluor")
+day1F$growth<-day1F$N-day1F$D
+
+p6<-ggplot(day1F,aes(y=growth, x=as.factor(DayTemp),
+  color=as.factor(NightTemp))) +
+  geom_boxplot()+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Treatment", y="growth")
+
+p6
+
+m2<-lm(growth~as.factor(DayTemp)+as.factor(NightTemp), data=day1F)
+anova(m2)
+summary(m2)
+
+
+day1aF<-subset(a, Day==1| Day==2)
+day1aF1<-subset(day1aF, Time=="N"|Day==2)
+day1aF2<-day1aF1[,c(3:6,9,17)]  #have to leave Day out because there are 2 values
+day1aF2<-pivot_wider(day1aF2, names_from ="Time", 
+                  values_from = "CorrectedFluor")
+day1aF2$growth<-day1aF2$D-day1aF2$N
+
+p7<-ggplot(day1aF2,aes(y=growth, x=as.factor(DayTemp),
+    color=as.factor(NightTemp))) +
+  geom_boxplot(width=0.75)+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Treatment", y="growth")
+p7
+
+### Combining night and day
+day1F<-day1F[,-c(5:6)]
+day1F$Time<-"Day"
+day1aF2$Time<-"Night"
+
+day1c<-rbind(day1F, day1aF2)
+
+#Plot with night and day changes in OD
+
+p8<-ggplot(day1c,aes(y=growth, x=as.factor(DayTemp),
+                     color=as.factor(NightTemp))) +
+  geom_boxplot(width=0.75)+
+  facet_grid(cols=vars(Sample), rows=vars(Time), scales = "free") +
+  labs(x = "Day temperature", y="Change in Fluor", col="Night temp") +theme_bw()
+  
+p8
+
+
+
+```
+
+
+
+
+
+Day 4 OD
+
+```{r}
+
+
+day4<-subset(a, Day==4)
+day4$Treatment<-paste(day4$DayTemp, day4$NightTemp, sep="_")
+day4<-day4[,c(3:7,9,13,18)]
+day4<-pivot_wider(day4, names_from ="Time", 
+                     values_from = "CorrectedOD")
+day4$growth<-day4$N-day4$D
+
+p10<-ggplot(day4,aes(y=growth, x=as.factor(DayTemp),
+  color=as.factor(NightTemp))) +
+  geom_boxplot()+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Treatment", y="growth")
+
+p10#This is for growth day 1m to 1 n
+
+m1n<-aov(growth~as.factor(DayTemp)*as.factor(NightTemp)* Sample, data=day4)
+anova(m1n)
+
+
+day4a<-subset(a, Day==4|Day==5)
+day4a<-subset(day4a, Time!="D"|Day==5)
+day4a<-day4a[,c(3:6,9,13)]  #have to leave Day out because there are 2 values
+day4a<-pivot_wider(day4a, names_from ="Time", 
+                  values_from = "CorrectedOD")
+day4a$growth<-day4a$D-day4a$N
+
+m1n<-aov(growth~as.factor(DayTemp)*as.factor(NightTemp)* Sample, data=day4a)
+anova(m1n)
+
+#growth for overnight
+p11<-ggplot(day4a,aes(y=growth, x=as.factor(DayTemp),
+    color=as.factor(NightTemp))) +
+  geom_boxplot(width=0.75)+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Treatment", y="growth")
+p11
+
+### Combining night and day
+day4<-day4[,-c(5:6)]
+day4$Time<-"Day"
+day4a$Time<-"Night"
+
+day4b<-rbind(day4, day4a)
+
+#Plot with night and day changes in OD
+
+p12<-ggplot(day4b,aes(y=growth, x=as.factor(DayTemp),
+                     color=as.factor(NightTemp))) +
+  geom_boxplot(width=0.75)+
+  facet_grid(cols=vars(Sample), rows=vars(Time), scales = "free") +
+  labs(x = "Day temperature", y="Change in OD", col="Night temp") + theme_bw()
+  
+p12
+
+
+```
+
+
+
+
+Day 4 Fluorescence
+```{r}
+
+day4F<-subset(a, Day==1)
+day4F$Treatment<-paste(day4$DayTemp, day4$NightTemp, sep="_")
+day4F<-day4F[,c(3:7,9,17,18)]
+day4F<-pivot_wider(day4F, names_from ="Time", 
+                     values_from = "CorrectedFluor")
+day4F$growth<-day4F$N-day4F$D
+
+p13<-ggplot(day4F,aes(y=growth, x=as.factor(DayTemp),
+  color=as.factor(NightTemp))) +
+  geom_boxplot()+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Treatment", y="growth")
+
+p13
+
+m4<-lm(growth~as.factor(DayTemp)+as.factor(NightTemp), data=day4F)
+anova(m4)
+
+
+day4aF<-subset(a, Day==1| Day==2)
+day4aF1<-subset(day4aF, Time=="N"|Day==2)
+day4aF2<-day4aF1[,c(3:6,9,17)]  #have to leave Day out because there are 2 values
+day4aF2<-pivot_wider(day4aF2, names_from ="Time", 
+                  values_from = "CorrectedFluor")
+day4aF2$growth<-day4aF2$D-day4aF2$N
+
+p14<-ggplot(day4aF2,aes(y=growth, x=as.factor(DayTemp),
+    color=as.factor(NightTemp))) +
+  geom_boxplot(width=0.75)+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Treatment", y="growth")
+p14
+
+### Combining night and day
+day4F<-day4F[,-c(5:6)]
+day4F$Time<-"Day"
+day4aF2$Time<-"Night"
+
+day4c<-rbind(day4F, day4aF2)
+
+#Plot with night and day changes in OD
+
+p15<-ggplot(day4c,aes(y=growth, x=as.factor(DayTemp),
+                     color=as.factor(NightTemp))) +
+  geom_violin(width=0.75)+
+  facet_grid(cols=vars(Sample), rows=vars(Time), scales = "free") +
+  labs(x = "Day temperature", y="Change in Fluor", col="Night temp") +theme_bw()
+  
+p15
+
+
+```
+
+
+
+
+
+
+
+
