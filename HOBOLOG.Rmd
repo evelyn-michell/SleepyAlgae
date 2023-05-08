@@ -1,0 +1,101 @@
+---
+title: "HOBO"
+author: "Evelyn Diaz - PID:A15576617"
+date: "2/23/2023"
+output: html_document
+---
+
+packages
+```{r}
+
+if (!require("pacman")) install.packages("pacman"); library(pacman) # for rapid install if not in library
+pacman::p_load("ggplot2", "broom.mixed", "readr", "tidyr", "doBy", "lubridate", "ggpubr","ggarrange" )
+
+```
+```{r}
+install.packages("ggpubr")
+library(ggpubr)
+```
+
+
+
+
+```{r}
+HOBO <- read_csv("Data/HOBO.csv")
+View(HOBO)
+```
+
+```{r}
+HOBO$BathTemp<- as.factor(HOBO$BathTemp)
+```
+
+
+
+```{r}
+str(HOBO)
+
+HOBO$Date<- mdy_hms(as.character(HOBO$Date))
+HOBO$D<- strptime(HOBO$Date, format="%Y-%m-%d %H:%M:%S")
+str(HOBO)
+```
+
+
+```{r}
+ggplot(HOBO,aes(x=Date, y=Temp, col=BathTemp)) + 
+  geom_point()
+```
+
+```{r}
+HOBO$Light[HOBO$Light == 1341521.92] = ""
+# correct ot numeric from character
+HOBO$Light<-as.numeric(HOBO$Light)
+
+#check structure
+str(HOBO)
+
+ggplot(HOBO,aes(x=Date, y=Light, col=BathTemp)) + 
+  geom_line()
+```
+
+
+
+```{r}
+figure <- ggarrange(Te, L,
+                    labels = c("A", "B", "C"),
+                    ncol = 2, nrow = 2)
+```
+
+
+
+
+
+```{r}
+HOBO$BathTemp<- as.factor(HOBO$BathTemp)
+HOBO$Date<- mdy_hms(as.character(HOBO$Date))
+HOBO$D<- strptime(HOBO$Date, format="%Y-%m-%d %H:%M:%S")
+HOBO$Light[HOBO$Light == 1341521.92] = ""
+HOBO$Light= as.numeric(HOBO$Light)
+HOBO$Light
+str(HOBO)
+ggplot(HOBO,aes(x=Date, y=Light, col=BathTemp)) + 
+  geom_point()
+
+```
+
+
+
+p1<-ggplot(b,aes(y=CorrectedOD.mean, x=Day, group=Treatment, color=Treatment)) +
+  geom_point(stat="identity")+
+  geom_line()+
+  facet_grid(cols=vars(Sample)) +
+  labs(x = "Day", y="Optical Density", color= "Temperature 
+Treatment (°C)
+Day_Night")+
+  geom_errorbar(aes(ymin=CorrectedOD.mean-CorrectedOD.sd, 
+                ymax=CorrectedOD.mean+CorrectedOD.sd), 
+                width=.2,position=position_dodge(0.05)) + theme_bw()
+
+
+
+
+

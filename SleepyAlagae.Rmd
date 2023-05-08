@@ -17,7 +17,7 @@ Read Data:
 
 ```{r}
 rm(list=ls())
-a<-read.csv("Evelyn data.csv")
+a<-read.csv("Data/Evelyn data.csv")
 summary(a)
 str(a)
 ```
